@@ -28,5 +28,5 @@ steps:
       scriptType: pscore
       scriptLocation: inlineScript
       inlineScript: | # Replace the subscription ID, resource group and workspace name.
-        az sentinel detection create --subscription sample-subscription-id --resource-group sample-sentinel-rg --workspace-name sample-workspace --detections-directory Detections/
+        az sentinel detection create --resource-group harirg1 --workspace-name HariLogAnalyticsWorkspace --detections-directory Detections/
   # If you need to deploy to more than one subscription/resource group, add another service connection and another task that deploys to that subscription
