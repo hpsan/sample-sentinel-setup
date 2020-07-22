@@ -42,44 +42,5 @@ suppression_enabled: True
 # Read aka.ms/kql to learn how to write KQL queries
 # Also see tips and tricks here https://github.com/Azure/Azure-Sentinel/wiki/Gotcha%27s-when-building-queries
 query: |
-  ## This query is from https://github.com/Azure/Azure-Sentinel/blob/master/Detections/SigninLogs/AnomalousUserAppSigninLocationIncrease-detection.yaml and is used for illustrative purposes
-  let lookBack_long = 14d;
-  let lookBack_med = 7d;
-  let lookBack = 1d;
-  SigninLogs
-  | where TimeGenerated >= startofday(ago(lookBack_long))
-  | extend locationString = strcat(tostring(LocationDetails["countryOrRegion"]), "/", tostring(LocationDetails["state"]), "/", tostring(LocationDetails["city"]), ";") 
-  | project TimeGenerated, AppDisplayName , UserPrincipalName, locationString 
-  // Create time series 
-  | make-series dLocationCount = dcount(locationString) on TimeGenerated in range(startofday(ago(lookBack_long)),now(), 1d) 
-  by UserPrincipalName, AppDisplayName 
-  // Compute best fit line for each entry 
-  | extend (RSquare,Slope,Variance,RVariance,Interception,LineFit)=series_fit_line(dLocationCount) 
-  // Chart the 3 most interesting lines  
-  // A 0-value slope corresponds to an account being completely stable over time for a given Azure Active Directory application
-  | where Slope > 0.3
-  | top 50 by Slope desc
-  | join kind = leftsemi (
-  SigninLogs
-  | where TimeGenerated >= startofday(ago(lookBack_med))
-  | extend locationString = strcat(tostring(LocationDetails["countryOrRegion"]), "/", tostring(LocationDetails["state"]), "/", tostring(LocationDetails["city"]), ";") 
-  | project TimeGenerated, AppDisplayName , UserPrincipalName, locationString 
-  | make-series dLocationCount = dcount(locationString) on TimeGenerated in range(startofday(ago(lookBack_med)) ,now(), 1d) 
-  by UserPrincipalName, AppDisplayName 
-  | extend (RSquare,Slope,Variance,RVariance,Interception,LineFit)=series_fit_line(dLocationCount) 
-  | top 50 by Slope desc
-  | where Slope > 0.3
-  ) on UserPrincipalName, AppDisplayName
-  | join kind = leftsemi (
-  SigninLogs
-  | where TimeGenerated >= startofday(ago(lookBack))
-  | extend locationString = strcat(tostring(LocationDetails["countryOrRegion"]), "/", tostring(LocationDetails["state"]), "/", tostring(LocationDetails["city"]), ";") 
-  | project TimeGenerated, AppDisplayName , UserPrincipalName, locationString 
-  | make-series dLocationCount = dcount(locationString) on TimeGenerated in range(startofday(ago(lookBack)) ,now(), 1d) 
-  by UserPrincipalName, AppDisplayName 
-  | extend (RSquare,Slope,Variance,RVariance,Interception,LineFit)=series_fit_line(dLocationCount) 
-  | top 50 by Slope desc
-  // Higher threshold requirement on last day anomaly
-  | where Slope > 5
-  ) on UserPrincipalName, AppDisplayName
-  | extend timestamp = TimeGenerated, AccountCustomEntity = UserPrincipalName
+  SecurityEvent
+  | limit 1
